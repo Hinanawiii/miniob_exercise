@@ -35,7 +35,7 @@ while (0);
  * 第三个部分还是C代码，flex 会复制此段代码
  */
 
-#include "sql/parser/parse_defs.h"
+#include "sql/parser/"
 #include "common/log/log.h"
 #include "yacc_sql.hpp"
 

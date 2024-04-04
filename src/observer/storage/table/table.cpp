@@ -24,6 +24,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/common/meta_util.h"
 #include "storage/index/bplus_tree_index.h"
 #include "storage/index/index.h"
+#include "storage/index/index_meta.h"
 #include "storage/record/record_manager.h"
 #include "storage/table/table.h"
 #include "storage/table/table_meta.h"
@@ -49,7 +50,6 @@ Table::~Table()
 
   LOG_INFO("Table has been closed: %s", name());
 }
-
 RC Table::create(int32_t table_id, const char *path, const char *name, const char *base_dir, int attribute_count,
     const AttrInfoSqlNode attributes[])
 {
@@ -121,6 +121,51 @@ RC Table::create(int32_t table_id, const char *path, const char *name, const cha
   LOG_INFO("Successfully create table %s:%s", base_dir, name);
   return rc;
 }
+
+RC Table::destroy()
+{ 
+  RC rc = sync();  // 刷新所有脏页
+  if (rc != RC::SUCCESS) 
+  {
+      LOG_ERROR("Failed to sync data, table name = %s", name());
+      return rc;
+  }
+
+  BufferPoolManager &bpm = BufferPoolManager::instance();
+
+  // 删除.table元数据文件
+  std::string meta_path = table_meta_file(base_dir_.c_str(), name());
+  if (bpm.delete_file(meta_path.c_str()) != RC::SUCCESS)  
+  {
+      return RC::FILE_REMOVE; 
+  }
+
+  // 删除.data数据文件
+  std::string data_path = table_data_file(base_dir_.c_str(), name());
+  if (bpm.delete_file(data_path.c_str()) != RC::SUCCESS)  
+  {
+    return RC::FILE_REMOVE; 
+  }
+
+  // 删除索引文件
+  const int index_num = table_meta_.index_num();  // 从元数据文件中获取索引数量
+  
+  for (int i = 0; i < index_num; i++) {
+    
+    BplusTreeIndex* index = (dynamic_cast<BplusTreeIndex*>(indexes_[i]));
+    index -> close();         
+    
+    const IndexMeta *index_meta = table_meta_.index(i);  // 返回第i个索引的元数据
+    
+    std::string index_file = table_index_file(base_dir_.c_str(), name(), index_meta->name());
+    if(bpm.delete_file(index_file.c_str()) != RC::SUCCESS) {
+      return RC::FILE_REMOVE; 
+    }
+  }
+
+  return RC::SUCCESS;
+}
+  
 
 RC Table::open(const char *meta_file, const char *base_dir)
 {

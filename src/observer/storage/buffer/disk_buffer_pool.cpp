@@ -12,6 +12,7 @@ See the Mulan PSL v2 for more details. */
 // Created by Meiyi & Longda on 2021/4/13.
 //
 #include <errno.h>
+#include <mutex>
 #include <string.h>
 
 #include "common/io/io.h"
@@ -665,6 +666,15 @@ RC BufferPoolManager::create_file(const char *file_name)
   close(fd);
   LOG_INFO("Successfully create %s.", file_name);
   return RC::SUCCESS;
+}
+
+RC BufferPoolManager::delete_file(const char* file_name)
+{
+    if (unlink(file_name) != 0) {
+      LOG_ERROR("Failed to remove index file %s, due to %s",file_name, strerror(errno));
+      return RC::FILE_REMOVE; 
+    }
+    return RC::SUCCESS;
 }
 
 RC BufferPoolManager::open_file(const char *_file_name, DiskBufferPool *&_bp)

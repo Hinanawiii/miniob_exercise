@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 
 const char *strrc(RC rc)
 {
+  //这里的 DEFINE_RC 和 DEFINE_RCS中的是一样的，进行替换。
 #define DEFINE_RC(name) \
   case RC::name: {      \
     return #name;       \

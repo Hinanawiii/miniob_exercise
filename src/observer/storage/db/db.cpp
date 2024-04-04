@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 
 #include <fcntl.h>
+#include <memory>
 #include <sys/stat.h>
 #include <vector>
 
@@ -99,6 +100,32 @@ RC Db::create_table(const char *table_name, int attribute_count, const AttrInfoS
   opened_tables_[table_name] = table;
   LOG_INFO("Create table success. table name=%s, table_id:%d", table_name, table_id);
   return RC::SUCCESS;
+}
+
+RC Db::drop_table(const char *table_name)
+{
+    RC rc = RC::SUCCESS;
+
+    if (!opened_tables_.count(table_name))
+    {
+      LOG_ERROR("%s doesn't exist.", table_name);
+      return RC::SCHEMA_TABLE_NOT_EXIST;
+    }
+    Table* table = find_table(table_name);
+
+    rc = table -> destroy();
+
+    if (rc != RC::SUCCESS)
+    {
+      LOG_ERROR("Failed to drop table %s", table_name);
+      return rc;
+    }
+
+    LOG_INFO("Drop Table Success. Table name = %s, table_id = %d", table_name, table ->table_id());
+
+    delete table;
+    opened_tables_.erase(table_name);
+    return RC::SUCCESS;
 }
 
 Table *Db::find_table(const char *table_name) const
