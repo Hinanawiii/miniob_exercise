@@ -59,6 +59,14 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt)
       return RC::SCHEMA_FIELD_TYPE_MISMATCH;
     }
   }
+  //check date input
+  for(int i=0;i<value_num;i++){
+    const AttrType value_type=values[i].attr_type();
+    if(value_type==DATES&&values[i].get_int()==0){//判断date在插入时候的值是否合法
+      LOG_WARN("field to insert date");
+      return RC::DATE_UNVALID;
+    }
+  }
 
   // everything alright
   stmt = new InsertStmt(table, values, value_num);

@@ -20,7 +20,7 @@ string token_name(const char *sql_string, YYLTYPE *llocp)
   return string(sql_string + llocp->first_column, llocp->last_column - llocp->first_column + 1);
 }
 
-int yyerror(YYLTYPE *llocp, const char *sql_string, ParsedSqlResult *sql_result, yyscan_t scanner, const char *msg)
+int yyerror(YYLTYPE *llocp, const char *sql_string, ParsedSqlResult *sql_result, yyscan_t scanner, const char *msg) 
 {
   std::unique_ptr<ParsedSqlNode> error_sql_node = std::make_unique<ParsedSqlNode>(SCF_ERROR);
   error_sql_node->error.error_msg = msg;
@@ -40,6 +40,17 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   expr->set_name(token_name(sql_string, llocp));
   return expr;
 }
+//寻找年月日相对应字符
+int find(const char *s,int b,const char *t)
+{
+  int i;
+  for(i=b;i<(int)strlen(s);i++){
+    if(s[i]==*t)
+    return i;
+  }
+  return -1;
+}
+
 
 %}
 
@@ -77,6 +88,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         INT_T
         STRING_T
         FLOAT_T
+        DATE_T
         HELP
         EXIT
         DOT //QUOTE
@@ -121,6 +133,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
+%token <string> DATE_STR
 %token <string> SSS
 //非终结符
 
@@ -341,6 +354,7 @@ type:
     INT_T      { $$=INTS; }
     | STRING_T { $$=CHARS; }
     | FLOAT_T  { $$=FLOATS; }
+    | DATE_T   { $$=DATES; }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -387,6 +401,18 @@ value:
       $$ = new Value(tmp);
       free(tmp);
       free($1);
+    }
+    |DATE_STR{
+        int p1=find($1,1,"-");
+        int p2=find($1,p1+1,"-");
+        char *y=common::substr($1,1,p1-1);
+        char *m=common::substr($1,p1+1,p2-1);
+        char *d=common::substr($1,p2+1,strlen($1)-2);
+        $$=new Value(y,m,d);
+      free(y);
+      free(m);
+      free(d);
+
     }
     ;
     

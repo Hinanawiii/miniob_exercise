@@ -99,6 +99,12 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       LOG_WARN("cannot find attr");
       return rc;
     }
+      // 检查两个类型是否能够比较
+      //判断右侧date是否合法
+    if(field->type()==AttrType::DATES&&condition.right_is_attr==false&&condition.right_value.get_int()==0)//属性在右侧或者未赋值成功
+    {
+      return RC::DATE_UNVALID;
+    }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_left(filter_obj);
@@ -115,6 +121,11 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
       return rc;
+    }
+    //判断右侧date是否合法
+    if(field->type()==AttrType::DATES&&condition.left_is_attr==false&&condition.left_value.get_int()==0)//属性在左侧或者未赋值成功
+    {
+      return RC::DATE_UNVALID;
     }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));

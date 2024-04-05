@@ -25,6 +25,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/comparator.h"
 #include "common/log/log.h"
 #include "sql/parser/parse_defs.h"
+#include "sql/parser/value.h"
 #include "storage/buffer/disk_buffer_pool.h"
 #include "storage/record/record_manager.h"
 #include "storage/trx/latch_memo.h"
@@ -63,6 +64,7 @@ public:
   int operator()(const char *v1, const char *v2) const
   {
     switch (attr_type_) {
+      case DATES:
       case INTS: {
         return common::compare_int((void *)v1, (void *)v2);
       } break;
@@ -130,6 +132,7 @@ public:
   std::string operator()(const char *v) const
   {
     switch (attr_type_) {
+      case DATES:
       case INTS: {
         return std::to_string(*(int *)v);
       } break;
